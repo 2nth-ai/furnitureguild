@@ -553,6 +553,9 @@
     { code: "FG-STL-BAR",  name: "Bar Stool — Oak (Set of 2)",       cat: "Kitchen", price: 1400,  desc: "75cm counter height. Stack-friendly. Sold in pairs." },
   ];
 
+  // ── Config ──
+  const API = "https://fg-api.2nth.ai";
+
   // ── State ──
   const cart = JSON.parse(localStorage.getItem("fg-cart") || "{}");
   let currentFilter = "all";
@@ -700,11 +703,52 @@
     `);
   }
 
-  function sendQuote(e) {
+  async function sendQuote(e) {
     e.preventDefault();
-    // Simulate API round trip + quote return
-    const quoteNumber = "QTN-FG-" + String(Math.floor(Math.random() * 900) + 100);
+    const form = e.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalLabel = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Sending…";
+
+    const customer = {
+      name:  form.name.value.trim(),
+      email: form.email.value.trim(),
+      city:  form.city.value.trim(),
+      notes: form.notes.value.trim(),
+    };
     const codes = Object.keys(cart);
+    const items = codes.map(c => ({ code: c, qty: cart[c] }));
+
+    let quoteNumber;
+    try {
+      const res = await fetch(API + "/quotes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customer, items }),
+      });
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error(`API ${res.status}: ${body.slice(0, 200)}`);
+      }
+      const data = await res.json();
+      quoteNumber = data.quote_number;   // e.g. "SAL-QTN-2026-00003"
+    } catch (err) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalLabel;
+      openModal(`
+        <h2>We couldn't save your quote request</h2>
+        <p class="sub">${String(err).replace(/</g, "&lt;")}</p>
+        <p class="sub">Please try again in a moment. If it keeps failing, email us at <a href="mailto:hello@furnitureguild.co.za">hello@furnitureguild.co.za</a>.</p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-primary" onclick="closeModal()">OK</button>
+        </div>
+      `);
+      return;
+    }
+
+    // Build the display values from the cart. VAT + delivery are shown to the
+    // customer but the backend Quotation holds the authoritative line items.
     const lines = codes.map(c => {
       const p = PRODUCTS.find(x => x.code === c);
       return { name: p.name, qty: cart[c], rate: p.price, total: p.price * cart[c] };
