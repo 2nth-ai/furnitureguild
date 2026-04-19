@@ -1,0 +1,19 @@
+{
+  "name": "furnitureguild",
+  "version": "0.1.0",
+  "description": "Furniture Guild — a 2nth.ai front-end demo on private ERPNext in africa-south1",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler pages dev .",
+    "deploy": "wrangler pages deploy . --project-name=furnitureguild --branch=main --commit-dirty=true",
+    "deploy:preview": "wrangler pages deploy . --project-name=furnitureguild --commit-dirty=true"
+  },
+  "devDependencies": {
+    "wrangler": "^4.76.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/2nth-ai/furnitureguild.git"
+  },
+  "homepage": "https://furnitureguild.pages.dev"
+}
